@@ -1,0 +1,25 @@
+spring:
+  application:
+    name: academic-advisor-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5442/advisor_db
+    username: postgres
+    password: 123456
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  liquibase:
+    enable: true
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+server:
+  port: 8080
