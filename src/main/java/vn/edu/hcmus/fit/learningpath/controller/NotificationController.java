@@ -1,5 +1,7 @@
 package vn.edu.hcmus.fit.learningpath.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -13,11 +15,13 @@ import java.util.List;
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@Tag(name = "Notifications", description = "System and academic notifications for students")
 public class NotificationController {
 
     private final NotificationService notificationService;
 
     @GetMapping("/{studentId}")
+    @Operation(summary = "Get student notifications", description = "Retrieves all notifications assigned to a specific student.")
     public ApiResponse<List<NotificationResponse>> getNotifications(@PathVariable Integer studentId) {
         return ApiResponse.<List<NotificationResponse>>builder()
                 .code(HttpStatus.OK.value())

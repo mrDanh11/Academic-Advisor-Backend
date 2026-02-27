@@ -1,5 +1,7 @@
 package vn.edu.hcmus.fit.learningpath.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.http.HttpStatus;
@@ -13,11 +15,13 @@ import java.util.List;
 @RequestMapping("/api/v1/recommendations")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
+@Tag(name = "Recommendations", description = "AI-powered course and career path recommendations")
 public class RecommendationController {
 
     private final RecommendationService recommendationService;
 
     @GetMapping("/{studentId}")
+    @Operation(summary = "Get student recommendations", description = "Retrieves a list of AI-generated recommendations for a specific student.")
     public ApiResponse<List<RecommendationResponse>> getRecommendations(@PathVariable Integer studentId) {
         return ApiResponse.<List<RecommendationResponse>>builder()
                 .code(HttpStatus.OK.value())

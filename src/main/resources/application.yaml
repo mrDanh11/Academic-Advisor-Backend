@@ -21,5 +21,14 @@ spring:
     enable: true
     change-log: classpath:db/changelog/db.changelog-master.xml
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: alpha
+    tags-sorter: alpha
+  packages-to-scan: vn.edu.hcmus.fit.learningpath.controller
+
 server:
   port: 8080
