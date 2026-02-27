@@ -1,11 +1,14 @@
 spring:
   application:
     name: academic-advisor-backend
+  profiles:
+    active: local
 
+  # Database Configuration using Environment Variables
   datasource:
-    url: jdbc:postgresql://localhost:5442/advisor_db
-    username: postgres
-    password: 123456
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -31,4 +34,4 @@ springdoc:
   packages-to-scan: vn.edu.hcmus.fit.learningpath.controller
 
 server:
-  port: 8080
+  port: ${PORT:8080}
