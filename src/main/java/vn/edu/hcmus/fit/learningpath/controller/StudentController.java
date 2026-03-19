@@ -13,7 +13,7 @@ import vn.edu.hcmus.fit.learningpath.service.StudentService;
 @RequestMapping("/api/v1/students")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*") 
-@Tag(name = "Students", description = "Student profile and personal information management")
+@Tag(name = "9. Students", description = "Student profile and personal information management")
 public class StudentController {
 
     private final StudentService studentService;

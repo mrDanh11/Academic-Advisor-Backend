@@ -13,7 +13,7 @@ import vn.edu.hcmus.fit.learningpath.service.AcademicService;
 @RequestMapping("/api/v1/academic")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@Tag(name = "Academic", description = "Operations related to academic progress and credits")
+@Tag(name = "6. Academic", description = "Operations related to academic progress and credits")
 public class AcademicController {
 
     private final AcademicService academicService;

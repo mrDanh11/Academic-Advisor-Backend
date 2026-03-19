@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@Tag(name = "Notifications", description = "System and academic notifications for students")
+@Tag(name = "7. Notifications", description = "System and academic notifications for students")
 public class NotificationController {
 
     private final NotificationService notificationService;

@@ -20,4 +20,19 @@ public class ApiResponse<T> {
     
     @Schema(description = "Data result", nullable = true)
     private T result;
+
+    public static <T> ApiResponse<T> success(T result) {
+        return ApiResponse.<T>builder()
+                .code(200)
+                .message("Success")
+                .result(result)
+                .build();
+    }
+
+    public static <T> ApiResponse<T> error(int code, String message) {
+        return ApiResponse.<T>builder()
+                .code(code)
+                .message(message)
+                .build();
+    }
 }

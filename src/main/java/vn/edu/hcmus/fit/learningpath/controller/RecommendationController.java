@@ -15,7 +15,7 @@ import java.util.List;
 @RequestMapping("/api/v1/recommendations")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
-@Tag(name = "Recommendations", description = "AI-powered course and career path recommendations")
+@Tag(name = "8. Recommendations", description = "AI-powered course and career path recommendations")
 public class RecommendationController {
 
     private final RecommendationService recommendationService;
