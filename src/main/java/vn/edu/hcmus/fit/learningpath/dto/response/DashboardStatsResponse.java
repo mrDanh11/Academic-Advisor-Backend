@@ -29,6 +29,8 @@ public class DashboardStatsResponse {
 
     @Data
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     @Schema(description = "Credits progress for a specific semester")
     public static class SemesterProgressResponse {
         @Schema(description = "Semester identifier", example = "2023.1")

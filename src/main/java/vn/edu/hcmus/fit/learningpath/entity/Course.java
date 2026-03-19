@@ -16,6 +16,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @EntityListeners(AuditingEntityListener.class)
 public class Course {
 
@@ -44,5 +45,6 @@ public class Course {
     private LocalDateTime updatedAt;
 
     @OneToMany(mappedBy = "course")
+    @Builder.Default
     private List<StudentCourse> studentCourses = new ArrayList<>();
 }

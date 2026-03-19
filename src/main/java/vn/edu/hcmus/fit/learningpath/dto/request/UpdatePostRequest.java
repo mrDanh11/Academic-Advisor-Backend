@@ -7,6 +7,7 @@ import lombok.*;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class UpdatePostRequest {
     @NotBlank(message = "Title is required")
     private String title;

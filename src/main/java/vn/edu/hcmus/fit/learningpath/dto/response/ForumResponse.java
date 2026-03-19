@@ -15,5 +15,11 @@ public class ForumResponse {
     private String description;
     private String rules;
     private Boolean isPublic;
+    private String type;
+    private Integer authorId;
+    private String authorName;
+    private String authorAvatarUrl;
+    private Integer membersCount;
+    private String avatarUrl;
     private LocalDateTime createdAt;
 }

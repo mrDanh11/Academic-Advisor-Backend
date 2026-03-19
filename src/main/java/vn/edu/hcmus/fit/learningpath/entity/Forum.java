@@ -31,6 +31,22 @@ public class Forum {
     @Builder.Default
     private Boolean isPublic = true;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type")
+    @Builder.Default
+    private ForumType type = ForumType.GLOBAL;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "author_id")
+    private Student author;
+
+    @Column(name = "members_count")
+    @Builder.Default
+    private Integer membersCount = 0;
+
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -38,4 +54,8 @@ public class Forum {
     @LastModifiedDate
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public enum ForumType {
+        GLOBAL, PRIVATE
+    }
 }

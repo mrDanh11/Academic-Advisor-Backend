@@ -8,5 +8,6 @@
     <include file="db/changelog/migrations/v1_initial_schema.sql"/>
     <include file="db/changelog/migrations/v2_update_student_details.sql"/>
     <include file="db/changelog/migrations/v3_forum_schema.sql"/>
+    <include file="db/changelog/migrations/v4_forum_enhanced.sql"/>
 
 </databaseChangeLog>

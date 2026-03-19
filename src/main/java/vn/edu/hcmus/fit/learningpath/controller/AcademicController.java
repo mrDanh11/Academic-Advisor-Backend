@@ -21,9 +21,6 @@ public class AcademicController {
     @GetMapping("/{studentId}/progress")
     @Operation(summary = "Get academic progress stats", description = "Retrieves total credits earned, required, and cumulative progress by semester.")
     public ApiResponse<DashboardStatsResponse> getAcademicProgress(@PathVariable Integer studentId) {
-        return ApiResponse.<DashboardStatsResponse>builder()
-                .code(HttpStatus.OK.value())
-                .result(academicService.getAcademicProgress(studentId))
-                .build();
+        return ApiResponse.success(academicService.getAcademicProgress(studentId));
     }
 }

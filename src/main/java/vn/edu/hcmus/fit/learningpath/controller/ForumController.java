@@ -27,19 +27,52 @@ public class ForumController {
 
     @GetMapping
     @Tag(name = "1. Categories", description = "Forum categories management")
-    @Operation(summary = "Get all forum categories")
-    public ApiResponse<List<ForumResponse>> getAllForums() {
-        return ApiResponse.success(forumService.getAllForums());
+    @Operation(summary = "Get all accessible forum categories")
+    public ApiResponse<List<ForumResponse>> getAllForums(@RequestParam(required = false) Integer studentId) {
+        return ApiResponse.success(forumService.getAllForums(studentId));
+    }
+
+    @PostMapping("/{forumId}/join")
+    @Tag(name = "1. Categories")
+    @Operation(summary = "Join a forum (Tham gia diễn đàn)")
+    public ApiResponse<String> joinForum(@PathVariable Integer forumId, @RequestParam Integer studentId) {
+        return ApiResponse.success(forumService.joinForum(forumId, studentId));
+    }
+
+    @PostMapping("/{forumId}/leave")
+    @Tag(name = "1. Categories")
+    @Operation(summary = "Leave a forum (Rời khỏi diễn đàn)")
+    public ApiResponse<String> leaveForum(@PathVariable Integer forumId, @RequestParam Integer studentId) {
+        return ApiResponse.success(forumService.leaveForum(forumId, studentId));
+    }
+
+    @DeleteMapping("/{forumId}")
+    @Tag(name = "1. Categories")
+    @Operation(summary = "Delete a forum (Only by owner)")
+    public ApiResponse<String> deleteForum(@PathVariable Integer forumId, @RequestParam Integer callerId) {
+        forumService.deleteForum(forumId, callerId);
+        return ApiResponse.success("Forum deleted successfully");
+    }
+
+    @DeleteMapping("/{forumId}/members/{studentId}")
+    @Tag(name = "1. Categories")
+    @Operation(summary = "Remove a member from forum (Only by owner)")
+    public ApiResponse<String> removeMember(
+            @PathVariable Integer forumId,
+            @PathVariable Integer studentId,
+            @RequestParam Integer callerId) {
+        return ApiResponse.success(forumService.removeMember(forumId, studentId, callerId));
     }
 
     @GetMapping("/{forumId}/posts")
     @Tag(name = "2. Posts", description = "Individual posts management")
-    @Operation(summary = "Get posts by forum category")
+    @Operation(summary = "Get posts by forum category (Support Private Check)")
     public ApiResponse<Page<PostResponse>> getPostsByForum(
             @PathVariable Integer forumId,
+            @RequestParam(required = false) Integer studentId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ApiResponse.success(forumService.getPostsByForum(forumId, PageRequest.of(page, size, Sort.by("id").descending())));
+        return ApiResponse.success(forumService.getPostsByForum(forumId, studentId, PageRequest.of(page, size, Sort.by("id").descending())));
     }
 
     @PostMapping("/posts")
@@ -51,9 +84,9 @@ public class ForumController {
 
     @GetMapping("/posts/{postId}")
     @Tag(name = "2. Posts")
-    @Operation(summary = "Get post details and increment view count")
-    public ApiResponse<PostResponse> getPostById(@PathVariable Integer postId) {
-        return ApiResponse.success(forumService.getPostById(postId));
+    @Operation(summary = "Get post details (Support Private Check)")
+    public ApiResponse<PostResponse> getPostById(@PathVariable Integer postId, @RequestParam(required = false) Integer studentId) {
+        return ApiResponse.success(forumService.getPostById(postId, studentId));
     }
 
     @PostMapping("/posts/{postId}/like")
@@ -159,9 +192,9 @@ public class ForumController {
 
     @DeleteMapping("/posts/{postId}")
     @Tag(name = "2. Posts")
-    @Operation(summary = "Delete a post (Xóa bài viết)")
-    public ApiResponse<String> deletePost(@PathVariable Integer postId) {
-        forumService.deletePost(postId);
+    @Operation(summary = "Delete a post (Support Owner/Author Check)")
+    public ApiResponse<String> deletePost(@PathVariable Integer postId, @RequestParam Integer callerId) {
+        forumService.deletePostByOwner(postId, callerId);
         return ApiResponse.success("Deleted post successfully");
     }
 

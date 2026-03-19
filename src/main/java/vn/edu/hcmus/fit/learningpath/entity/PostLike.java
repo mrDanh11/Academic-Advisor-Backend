@@ -37,6 +37,7 @@ public class PostLike {
     @Setter
     @NoArgsConstructor
     @AllArgsConstructor
+    @Builder
     @EqualsAndHashCode
     public static class PostLikeId implements Serializable {
         @Column(name = "post_id")

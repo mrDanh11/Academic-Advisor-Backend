@@ -28,23 +28,44 @@ public class ForumService {
     private final CommentRepository commentRepository;
     private final PostLikeRepository postLikeRepository;
     private final StudentRepository studentRepository;
+    private final ForumMembershipRepository forumMembershipRepository;
 
-    public List<ForumResponse> getAllForums() {
+    public List<ForumResponse> getAllForums(Integer studentId) {
         return forumRepository.findAll().stream()
+                .filter(forum -> isVisibleToStudent(forum, studentId))
                 .map(this::mapToForumResponse)
                 .collect(Collectors.toList());
     }
 
-    public Page<PostResponse> getPostsByForum(Integer forumId, Pageable pageable) {
+    private boolean isVisibleToStudent(Forum forum, Integer studentId) {
+        if (forum.getType() == Forum.ForumType.GLOBAL || Boolean.TRUE.equals(forum.getIsPublic())) {
+            return true;
+        }
+        if (studentId == null) return false;
+        return forumMembershipRepository.existsByForum_IdAndStudent_Id(forum.getId(), studentId);
+    }
+
+    public Page<PostResponse> getPostsByForum(Integer forumId, Integer studentId, Pageable pageable) {
+        Forum forum = forumRepository.findById(forumId)
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Forum not found"));
+
+        if (!isVisibleToStudent(forum, studentId)) {
+            throw new AcademicException(HttpStatus.FORBIDDEN, "You do not have permission to view posts in this forum");
+        }
+
         return postRepository.findByForumId(forumId, pageable)
                 .map(this::mapToPostResponse);
     }
 
     @Transactional
-    public PostResponse getPostById(Integer postId) {
+    public PostResponse getPostById(Integer postId, Integer studentId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Post not found"));
-        
+
+        if (!isVisibleToStudent(post.getForum(), studentId)) {
+            throw new AcademicException(HttpStatus.FORBIDDEN, "You do not have permission to view this post");
+        }
+
         post.setViewsCount(post.getViewsCount() + 1);
         return mapToPostResponse(postRepository.save(post));
     }
@@ -56,6 +77,11 @@ public class ForumService {
         Student student = studentRepository.findById(request.getStudentId())
                 .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Student not found"));
 
+        if (forum.getType() == Forum.ForumType.PRIVATE && 
+            !forumMembershipRepository.existsByForum_IdAndStudent_Id(forum.getId(), student.getId())) {
+            throw new AcademicException(HttpStatus.FORBIDDEN, "You must join this forum before posting");
+        }
+
         Post post = Post.builder()
                 .forum(forum)
                 .author(student)
@@ -65,6 +91,120 @@ public class ForumService {
                 .build();
         
         return mapToPostResponse(postRepository.save(post));
+    }
+
+    @Transactional
+    public String joinForum(Integer forumId, Integer studentId) {
+        Forum forum = forumRepository.findById(forumId)
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Forum not found"));
+        Student student = studentRepository.findById(studentId)
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Student not found"));
+
+        if (forumMembershipRepository.existsByForum_IdAndStudent_Id(forumId, studentId)) {
+            return "Already a member";
+        }
+
+        ForumMembership membership = ForumMembership.builder()
+                .forum(forum)
+                .student(student)
+                .role(ForumMembership.MembershipRole.MEMBER)
+                .build();
+        
+        forumMembershipRepository.save(membership);
+        forum.setMembersCount(forum.getMembersCount() + 1);
+        forumRepository.save(forum);
+
+        return "Joined successfully";
+    }
+
+    @Transactional
+    public String leaveForum(Integer forumId, Integer studentId) {
+        Forum forum = forumRepository.findById(forumId)
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Forum not found"));
+
+        if (!forumMembershipRepository.existsByForum_IdAndStudent_Id(forumId, studentId)) {
+            return "Not a member";
+        }
+
+        forumMembershipRepository.deleteByForum_IdAndStudent_Id(forumId, studentId);
+        forum.setMembersCount(Math.max(0, forum.getMembersCount() - 1));
+        forumRepository.save(forum);
+
+        return "Left successfully";
+    }
+
+    @Transactional
+    public void deleteForum(Integer forumId, Integer callerId) {
+        Forum forum = forumRepository.findById(forumId)
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Forum not found"));
+
+        // Only author/owner can delete
+        if (!forum.getAuthor().getId().equals(callerId)) {
+            throw new AcademicException(HttpStatus.FORBIDDEN, "Only the author can delete this forum");
+        }
+
+        // Deleting forum will cascade delete posts, comments, memberships due to DB constraints
+        forumRepository.delete(forum);
+    }
+
+    @Transactional
+    public String removeMember(Integer forumId, Integer studentId, Integer callerId) {
+        Forum forum = forumRepository.findById(forumId)
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Forum not found"));
+
+        // Only owner can remove members
+        boolean isOwner = forumMembershipRepository.existsByForum_IdAndStudent_IdAndRole(
+                forumId, callerId, ForumMembership.MembershipRole.OWNER);
+        
+        if (!isOwner && !forum.getAuthor().getId().equals(callerId)) {
+            throw new AcademicException(HttpStatus.FORBIDDEN, "Only the owner can remove members");
+        }
+
+        if (studentId.equals(callerId)) {
+            throw new AcademicException(HttpStatus.BAD_REQUEST, "Owner cannot remove themselves. Use delete forum instead.");
+        }
+
+        if (forumMembershipRepository.existsByForum_IdAndStudent_Id(forumId, studentId)) {
+            forumMembershipRepository.deleteByForum_IdAndStudent_Id(forumId, studentId);
+            forum.setMembersCount(Math.max(0, forum.getMembersCount() - 1));
+            forumRepository.save(forum);
+            return "Member removed successfully";
+        }
+
+        return "Student is not a member";
+    }
+
+    @Transactional
+    public void deletePostByOwner(Integer postId, Integer callerId) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Post not found"));
+
+        // Allow if caller is post author OR forum owner
+        boolean isForumOwner = forumMembershipRepository.existsByForum_IdAndStudent_IdAndRole(
+                post.getForum().getId(), callerId, ForumMembership.MembershipRole.OWNER);
+
+        if (!post.getAuthor().getId().equals(callerId) && !isForumOwner) {
+            throw new AcademicException(HttpStatus.FORBIDDEN, "You don't have permission to delete this post");
+        }
+
+        postRepository.delete(post);
+    }
+
+    private ForumResponse mapToForumResponse(Forum forum) {
+        return ForumResponse.builder()
+                .id(forum.getId())
+                .name(forum.getName())
+                .description(forum.getDescription())
+                .rules(forum.getRules())
+                .isPublic(forum.getIsPublic())
+                .type(forum.getType().name())
+                .authorId(forum.getAuthor() != null ? forum.getAuthor().getId() : null)
+                .authorName(forum.getAuthor() != null ? forum.getAuthor().getFullName() : "Admin")
+                .authorAvatarUrl(forum.getAuthor() != null ? forum.getAuthor().getAvatarUrl() : null)
+                .membersCount(forum.getMembersCount())
+                .avatarUrl(forum.getAvatarUrl())
+                .createdAt(forum.getCreatedAt())
+                .build();
     }
 
     @Transactional
@@ -165,14 +305,6 @@ public class ForumService {
     }
 
     @Transactional
-    public void deletePost(Integer postId) {
-        if (!postRepository.existsById(postId)) {
-            throw new AcademicException(HttpStatus.NOT_FOUND, "Post not found");
-        }
-        postRepository.deleteById(postId);
-    }
-
-    @Transactional
     public CommentResponse updateComment(Integer commentId, String content) {
         Comment comment = commentRepository.findById(commentId)
                 .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Comment not found"));
@@ -225,17 +357,6 @@ public class ForumService {
             count += countCommentAndReplies(reply);
         }
         return count;
-    }
-
-    private ForumResponse mapToForumResponse(Forum forum) {
-        return ForumResponse.builder()
-                .id(forum.getId())
-                .name(forum.getName())
-                .description(forum.getDescription())
-                .rules(forum.getRules())
-                .isPublic(forum.getIsPublic())
-                .createdAt(forum.getCreatedAt())
-                .build();
     }
 
     private PostResponse mapToPostResponse(Post post) {
