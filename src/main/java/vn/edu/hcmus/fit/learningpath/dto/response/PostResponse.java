@@ -17,6 +17,7 @@ public class PostResponse {
     private String authorAvatarUrl;
     private String title;
     private String content;
+    private String imageUrl;
     private String tags;
     private Integer viewsCount;
     private Integer likesCount;

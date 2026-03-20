@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.edu.hcmus.fit.learningpath.dto.request.CreateCommentRequest;
+import vn.edu.hcmus.fit.learningpath.dto.request.CreateForumRequest;
 import vn.edu.hcmus.fit.learningpath.dto.request.CreatePostRequest;
 import vn.edu.hcmus.fit.learningpath.dto.request.UpdatePostRequest;
 import vn.edu.hcmus.fit.learningpath.dto.response.CommentResponse;
@@ -29,6 +30,33 @@ public class ForumService {
     private final PostLikeRepository postLikeRepository;
     private final StudentRepository studentRepository;
     private final ForumMembershipRepository forumMembershipRepository;
+
+    @Transactional
+    public ForumResponse createForum(CreateForumRequest request) {
+        Student author = studentRepository.findById(request.getAuthorId())
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Student not found"));
+
+        Forum forum = Forum.builder()
+                .name(request.getName())
+                .description(request.getDescription())
+                .isPublic(request.isPublic())
+                .type(request.isPublic() ? Forum.ForumType.GLOBAL : Forum.ForumType.PRIVATE)
+                .author(author)
+                .membersCount(1) // Author is the first member
+                .build();
+
+        Forum savedForum = forumRepository.save(forum);
+
+        // Auto-join the author as OWNER
+        ForumMembership membership = ForumMembership.builder()
+                .forum(savedForum)
+                .student(author)
+                .role(ForumMembership.MembershipRole.OWNER)
+                .build();
+        forumMembershipRepository.save(membership);
+
+        return mapToForumResponse(savedForum);
+    }
 
     public List<ForumResponse> getAllForums(Integer studentId) {
         return forumRepository.findAll().stream()
@@ -88,6 +116,31 @@ public class ForumService {
                 .title(request.getTitle())
                 .content(request.getContent())
                 .tags(request.getTags())
+                .imageUrl(request.getImageUrl())
+                .build();
+        
+        return mapToPostResponse(postRepository.save(post));
+    }
+
+    @Transactional
+    public PostResponse createPostWithImage(CreatePostRequest request, String imageUrl) {
+        Forum forum = forumRepository.findById(request.getForumId())
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Forum not found"));
+        Student student = studentRepository.findById(request.getStudentId())
+                .orElseThrow(() -> new AcademicException(HttpStatus.NOT_FOUND, "Student not found"));
+
+        if (forum.getType() == Forum.ForumType.PRIVATE && 
+            !forumMembershipRepository.existsByForum_IdAndStudent_Id(forum.getId(), student.getId())) {
+            throw new AcademicException(HttpStatus.FORBIDDEN, "You must join this forum before posting");
+        }
+
+        Post post = Post.builder()
+                .forum(forum)
+                .author(student)
+                .title(request.getTitle())
+                .content(request.getContent())
+                .tags(request.getTags())
+                .imageUrl(imageUrl)
                 .build();
         
         return mapToPostResponse(postRepository.save(post));
@@ -368,6 +421,7 @@ public class ForumService {
                 .authorAvatarUrl(post.getAuthor().getAvatarUrl())
                 .title(post.getTitle())
                 .content(post.getContent())
+                .imageUrl(post.getImageUrl())
                 .tags(post.getTags())
                 .viewsCount(post.getViewsCount())
                 .likesCount(post.getLikesCount())

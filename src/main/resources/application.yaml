@@ -41,3 +41,8 @@ springdoc:
 
 server:
   port: ${PORT:8080}
+
+supabase:
+  url: ${SUPABASE_URL}
+  key: ${SUPABASE_KEY}
+  bucket: ${SUPABASE_BUCKET:forum-images}

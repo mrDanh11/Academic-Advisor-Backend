@@ -35,6 +35,9 @@ public class Post {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "image_url", length = 1000)
+    private String imageUrl;
+
     private String tags;
 
     @Column(name = "views_count")

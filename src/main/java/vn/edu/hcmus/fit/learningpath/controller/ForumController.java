@@ -6,8 +6,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import vn.edu.hcmus.fit.learningpath.dto.request.CreateCommentRequest;
+import vn.edu.hcmus.fit.learningpath.dto.request.CreateForumRequest;
 import vn.edu.hcmus.fit.learningpath.dto.request.CreatePostRequest;
 import vn.edu.hcmus.fit.learningpath.dto.request.UpdatePostRequest;
 import vn.edu.hcmus.fit.learningpath.dto.response.ApiResponse;
@@ -16,6 +19,7 @@ import vn.edu.hcmus.fit.learningpath.dto.response.ForumResponse;
 import vn.edu.hcmus.fit.learningpath.dto.response.LikestudentResponse;
 import vn.edu.hcmus.fit.learningpath.dto.response.PostResponse;
 import vn.edu.hcmus.fit.learningpath.service.ForumService;
+import vn.edu.hcmus.fit.learningpath.service.StorageService;
 
 import java.util.List;
 
@@ -24,12 +28,20 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ForumController {
     private final ForumService forumService;
+    private final StorageService storageService;
 
     @GetMapping
     @Tag(name = "1. Categories", description = "Forum categories management")
     @Operation(summary = "Get all accessible forum categories")
     public ApiResponse<List<ForumResponse>> getAllForums(@RequestParam(required = false) Integer studentId) {
         return ApiResponse.success(forumService.getAllForums(studentId));
+    }
+
+    @PostMapping
+    @Tag(name = "1. Categories")
+    @Operation(summary = "Create a new forum (Tạo diễn đàn mới)")
+    public ApiResponse<ForumResponse> createForum(@RequestBody CreateForumRequest request) {
+        return ApiResponse.success(forumService.createForum(request));
     }
 
     @PostMapping("/{forumId}/join")
@@ -75,10 +87,23 @@ public class ForumController {
         return ApiResponse.success(forumService.getPostsByForum(forumId, studentId, PageRequest.of(page, size, Sort.by("id").descending())));
     }
 
-    @PostMapping("/posts")
+    @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Tag(name = "2. Posts")
-    @Operation(summary = "Create a new post")
-    public ApiResponse<PostResponse> createPost(@RequestBody CreatePostRequest request) {
+    @Operation(summary = "Create a new post with optional image (Tạo bài viết kèm ảnh)")
+    public ApiResponse<PostResponse> createPost(@ModelAttribute CreatePostRequest request) {
+        
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
+            String imageUrl = storageService.uploadImage(request.getImage());
+            request.setImageUrl(imageUrl);
+        }
+        
+        return ApiResponse.success(forumService.createPost(request));
+    }
+
+    @PostMapping("/posts-simple")
+    @Tag(name = "2. Posts")
+    @Operation(summary = "Create a new post (Body only, no image)")
+    public ApiResponse<PostResponse> createPostSimple(@RequestBody CreatePostRequest request) {
         return ApiResponse.success(forumService.createPost(request));
     }
 
