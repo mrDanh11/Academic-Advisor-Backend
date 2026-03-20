@@ -85,6 +85,11 @@ public class ForumService {
                 .map(this::mapToPostResponse);
     }
 
+    public Page<PostResponse> getFeedPosts(Integer studentId, Pageable pageable) {
+        return postRepository.findFeedPosts(studentId, pageable)
+                .map(this::mapToPostResponse);
+    }
+
     @Transactional
     public PostResponse getPostById(Integer postId, Integer studentId) {
         Post post = postRepository.findById(postId)

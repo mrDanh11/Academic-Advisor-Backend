@@ -23,8 +23,10 @@ public class CreatePostRequest {
     private String content;
 
     private String tags;
+
+    @io.swagger.v3.oas.annotations.media.Schema(hidden = true)
     private String imageUrl;
     
-    // Thêm trường file để nhận trực tiếp từ @ModelAttribute
+    @io.swagger.v3.oas.annotations.media.Schema(description = "File ảnh đính kèm")
     private MultipartFile image;
 }

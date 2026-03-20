@@ -77,7 +77,7 @@ public class ForumController {
     }
 
     @GetMapping("/{forumId}/posts")
-    @Tag(name = "2. Posts", description = "Individual posts management")
+    @Tag(name = "2. Posts")
     @Operation(summary = "Get posts by forum category (Support Private Check)")
     public ApiResponse<Page<PostResponse>> getPostsByForum(
             @PathVariable Integer forumId,
@@ -85,6 +85,16 @@ public class ForumController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         return ApiResponse.success(forumService.getPostsByForum(forumId, studentId, PageRequest.of(page, size, Sort.by("id").descending())));
+    }
+
+    @GetMapping("/feed")
+    @Tag(name = "2. Posts")
+    @Operation(summary = "Get personalized feed (Global posts + Joined forum posts)")
+    public ApiResponse<Page<PostResponse>> getFeed(
+            @RequestParam(required = false) Integer studentId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ApiResponse.success(forumService.getFeedPosts(studentId, PageRequest.of(page, size, Sort.by("id").descending())));
     }
 
     @PostMapping(value = "/posts", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -21,6 +21,12 @@ public interface PostRepository extends JpaRepository<Post, Integer> {
     @Query("SELECT p FROM Post p ORDER BY p.viewsCount DESC, p.likesCount DESC")
     Page<Post> findTrendingPosts(Pageable pageable);
 
+    @Query("SELECT p FROM Post p WHERE p.forum.type = 'GLOBAL' OR " +
+           "( :studentId IS NOT NULL AND EXISTS (" +
+           "  SELECT 1 FROM ForumMembership fm " +
+           "  WHERE fm.student.id = :studentId AND fm.forum.id = p.forum.id))")
+    Page<Post> findFeedPosts(@Param("studentId") Integer studentId, Pageable pageable);
+
     @Query("SELECT pl.post FROM PostLike pl WHERE pl.student.id = :studentId")
     Page<Post> findLikedPostsByStudentId(@Param("studentId") Integer studentId, Pageable pageable);
 }
