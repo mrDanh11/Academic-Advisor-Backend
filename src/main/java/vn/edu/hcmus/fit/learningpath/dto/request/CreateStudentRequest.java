@@ -31,6 +31,7 @@ public class CreateStudentRequest {
     private String currentPosition;
     private LocalDate startDate;
     
-    // Link ảnh đại diện (String)
+    // Hỗ trợ cả link ảnh có sẵn và upload file trực tiếp
     private String avatarUrl;
+    private org.springframework.web.multipart.MultipartFile avatarFile;
 }
